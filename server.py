@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, request, redirect
 import random
 
 app = Flask(__name__)
@@ -10,6 +10,7 @@ topics = [
     {'id': 2, 'title': 'css', 'body': 'css is ...'},
     {'id': 3, 'title': 'javascript', 'body': 'javascript is ...'}
 ]
+next_id = 4
 
 
 def template(contents, content):
@@ -47,11 +48,6 @@ def index():
     return template(get_contents(), '<h2>Welcome</h2>')
 
 
-@app.route('/create/')
-def create():
-    return template(get_contents(), 'create')
-
-
 # 라우팅 할 때 변수를 받기 위해서는 <변수> 를 통해서 받는다.
 # <> 안에 '자료형:'을 적어주면 자동으로 해당 자료형으로 받는다.
 @app.route('/read/<int:id>/')
@@ -67,6 +63,36 @@ def read(id):
         body = body + '돌아가세요.'
 
     return template(get_contents(), f'<h2>{title}</h2><p>{body}</p>')
+
+
+# HTTP Methods 에 POST 를 추가 해주지 않으면, POST 방식을 사용할 수 없다.
+@app.route('/create/', methods=['GET', 'POST'])
+def create():
+    if request.method == 'GET':
+        content = '''
+            <form action="/create/" method="POST">
+                <p><input type="text" name="title" placeholder="title"></p>
+                <p><textarea placeholder="body" name="body"></textarea></p>
+                <p><input type="submit" value="create"></p>
+            </form>
+        '''
+        return template(get_contents(), content)
+
+    elif request.method == 'POST':
+        global next_id
+        title = request.form['title']
+        body = request.form['body']
+        new_topic = {'id': next_id, 'title': title, 'body': body}
+        topics.append(new_topic)
+
+        url = f'/read/{str(next_id)}'
+        next_id += 1
+
+        return redirect(url)
+
+
+
+
 
 
 app.run(port=5000, debug=True)
